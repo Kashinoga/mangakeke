@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const getManga = require("../../googleSheets");
+const { getManga } = require("../../googleSheets");
 
 module.exports = {
   data: new SlashCommandBuilder()

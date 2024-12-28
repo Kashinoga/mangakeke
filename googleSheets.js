@@ -3,9 +3,14 @@ const path = require("path");
 const process = require("process");
 const { authenticate } = require("@google-cloud/local-auth");
 const { google } = require("googleapis");
+const dotenv = require("dotenv");
+
+dotenv.config();
+
+const spreadSheetId = process.env.GOOGLE_SPREAD_SHEET_ID;
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"];
+const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
@@ -67,13 +72,12 @@ async function authorize() {
 
 /**
  * Prints the manga spread sheet
- * @see https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
  * @param {google.auth.OAuth2} auth The authenticated Google OAuth client.
  */
 async function listManga(auth) {
   const sheets = google.sheets({ version: "v4", auth });
   const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: "1gZnP6gms5fSnUQ2_WAFa-uPOU9QLS4dYWiXL27SKjyA",
+    spreadsheetId: spreadSheetId,
     range: "Manga!A2:F",
   });
   const rows = res.data.values;
@@ -85,9 +89,9 @@ async function listManga(auth) {
   const mangaMap = new Map();
 
   rows.forEach((row) => {
-    // console.log(
-    //   `Name: ${row[0]}, Chapter: ${row[1]}, Link: ${row[2]}, Release day: ${row[3]}, Description: ${row[4]}, image: ${row[5]}`
-    // );
+    console.log(
+      `Name: ${row[0]}, Chapter: ${row[1]}, Link: ${row[2]}, Release day: ${row[3]}, Description: ${row[4]}, image: ${row[5]}`
+    );
 
     if (!mangaMap.has(row[0].toLowerCase())) {
       mangaMap.set(row[0].toLowerCase(), {
@@ -105,11 +109,40 @@ async function listManga(auth) {
 }
 
 async function getManga() {
+  console.log("hello are we here");
   const auth = await authorize(); // Wait for authorization
   const manga = await listManga(auth); // Wait for manga data
   return manga;
 }
 
-// authorize().then(listManga).catch(console.error);
+/**
+ * Add to the manga spreadsheet
+ * @param data The data object {name, chapter, link, day, description, image}
+ */
+async function appendManga(data) {
+  const auth = await authorize(); // Wait for authorization
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = spreadSheetId;
+  try {
+    const response = await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: "Manga", // all the range in the manga sheet
+      valueInputOption: "RAW",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: {
+        values: [data],
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Error appending the data to your google sheets : ",
+      error.message
+    );
+    throw new Error(`Failed to add manga data ${error.message}`);
+  }
+}
 
-module.exports = getManga;
+module.exports = {
+  getManga,
+  appendManga,
+};
