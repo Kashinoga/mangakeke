@@ -32,6 +32,7 @@ module.exports = {
     .addStringOption((option) =>
       option.setName("image").setDescription("Image url").setRequired(true)
     ),
+
   async execute(interaction) {
     const title = interaction.options.getString("title");
     const chapter = interaction.options.getString("chapter");

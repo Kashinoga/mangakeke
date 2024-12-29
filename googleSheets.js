@@ -89,11 +89,7 @@ async function listManga(auth) {
   const mangaMap = new Map();
 
   rows.forEach((row) => {
-    console.log(
-      `Name: ${row[0]}, Chapter: ${row[1]}, Link: ${row[2]}, Release day: ${row[3]}, Description: ${row[4]}, image: ${row[5]}`
-    );
-
-    if (!mangaMap.has(row[0].toLowerCase())) {
+    if (row[0] && !mangaMap.has(row[0].toLowerCase())) {
       mangaMap.set(row[0].toLowerCase(), {
         name: row[0],
         chapter: row[1],
@@ -109,7 +105,6 @@ async function listManga(auth) {
 }
 
 async function getManga() {
-  console.log("hello are we here");
   const auth = await authorize(); // Wait for authorization
   const manga = await listManga(auth); // Wait for manga data
   return manga;
@@ -142,7 +137,57 @@ async function appendManga(data) {
   }
 }
 
+async function updateChapter(searchValue, chapterNumber) {
+  const auth = await authorize(); // Wait for authorization
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = spreadSheetId;
+
+  try {
+    // Fetch all the data
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: "Manga",
+    });
+
+    const rows = response.data.values;
+
+    let rowIndex = -1;
+
+    for (let index = 0; index < rows.length; index++) {
+      const title = rows[index][0]?.toLowerCase();
+      if (title && title.includes(searchValue.toLowerCase())) {
+        // rowIndex is not index 0 notation
+        rowIndex = index + 1;
+        console.log(`Value is found in row ${rowIndex}`);
+
+        break;
+      }
+    }
+
+    if (rowIndex === -1) {
+      console.log("Value was not found");
+      return null;
+    }
+
+    // This syntax is {SheetName}!{Column}{Row}
+    const range = `Manga!B${rowIndex}`;
+
+    // update the row
+    const updateSheet = await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range,
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [[chapterNumber]],
+      },
+    });
+  } catch (error) {
+    console.error("Error finding the row", error.message);
+  }
+}
+
 module.exports = {
   getManga,
   appendManga,
+  updateChapter,
 };
