@@ -186,8 +186,58 @@ async function updateChapter(searchValue, chapterNumber) {
   }
 }
 
+async function getMangaOfTheDay(searchValue) {
+  const auth = await authorize(); // Wait for authorization
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = spreadSheetId;
+
+  try {
+    // Fetch all the data
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: "Manga",
+    });
+
+    const rows = response.data.values;
+
+    let rowIndex = -1;
+    let mangas = [];
+
+    for (let index = 0; index < rows.length; index++) {
+      const title = rows[index][3]?.toLowerCase();
+      if (title && title.includes(searchValue.toLowerCase())) {
+        // rowIndex is not index 0 notation
+        rowIndex = index + 1;
+
+        const manga = {
+          name: rows[index][0],
+          chapter: rows[index][1],
+          link: rows[index][2],
+          day: rows[index][3],
+          description: rows[index][4],
+          image: rows[index][5],
+        };
+
+        mangas.push(manga);
+      }
+    }
+
+    if (rowIndex === -1) {
+      console.log("Value was not found");
+      return null;
+    }
+
+    return mangas;
+  } catch (error) {
+    console.error("Error finding the manga", error.message);
+  }
+}
+
+getMangaOfTheDay("sunday");
+
 module.exports = {
   getManga,
+  getMangaOfTheDay,
   appendManga,
   updateChapter,
 };

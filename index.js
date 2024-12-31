@@ -2,6 +2,7 @@ const dotenv = require("dotenv");
 const fs = require("node:fs");
 const path = require("node:path");
 const { Client, Collection, Events, GatewayIntentBits } = require("discord.js");
+const { getMangaOfTheDay } = require("./googleSheets");
 
 dotenv.config();
 
@@ -32,9 +33,79 @@ for (const folder of commandFolders) {
   }
 }
 
+const channelID = process.env.CHANNEL_ID;
+
 client.once(Events.ClientReady, (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Send Manga update message
+const sendMessage = async () => {
+  const today = new Date().getDay();
+  const days = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  const mangasOfTheDay = await getMangaOfTheDay(days[today]);
+
+  const channel = client.channels.cache.get(channelID);
+
+  if (mangasOfTheDay) {
+    for (const manga of mangasOfTheDay) {
+      const { name, chapter, link, day, description, image } = manga;
+      const mangaEmbedMsg = {
+        color: 0x0099ff,
+        title: `${name} updated on ${day}`,
+        url: link,
+        description: description,
+        fields: [
+          {
+            name: "Chapter",
+            value: chapter,
+          },
+          {
+            name: "Release Day",
+            value: day,
+          },
+        ],
+        image: {
+          url: image,
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      channel.send({ embeds: [mangaEmbedMsg] });
+      await delay(2000);
+    }
+  }
+};
+
+// send a message every two minutes
+// setInterval(sendMessage, 2 * 60 * 1000);
+
+const timeUntilOneAm = () => {
+  const now = new Date();
+  const oneAm = new Date();
+  oneAm.setHours(1, 0, 0, 0);
+
+  return oneAm - now;
+};
+
+setTimeout(() => {
+  // sends the first message
+  sendMessage();
+
+  // schedule the nexty messages every 24 hours
+  setInterval(sendMessage, 24 * 60 * 60 * 1000); // 24 hours in milleseconds
+}, timeUntilOneAm());
 
 const token = process.env.DISCORD_TOKEN;
 // Log in to Discord with your client's token
