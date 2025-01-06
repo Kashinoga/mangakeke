@@ -58,7 +58,17 @@ const sendMessage = async () => {
 
   const channel = client.channels.cache.get(channelID);
 
-  if (mangasOfTheDay) {
+  if (channel) {
+    const permissions = channel.permissionsFor(client.user);
+    if (!permissions.has("SEND_MESSAGES")) {
+      console.log(
+        `[ERROR] Bot does not have permission to send messages in the channel: ${channelID}`
+      );
+      return;
+    }
+  }
+
+  if (mangasOfTheDay && channel) {
     for (const manga of mangasOfTheDay) {
       const { name, chapter, link, day, description, image } = manga;
       const mangaEmbedMsg = {
