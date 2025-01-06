@@ -233,7 +233,8 @@ async function getMangaOfTheDay(searchValue) {
   }
 }
 
-getMangaOfTheDay("sunday");
+// Uncomment get mangaoftheday to get your auth jsons if you don't have it
+// getMangaOfTheDay("sunday");
 
 module.exports = {
   getManga,
