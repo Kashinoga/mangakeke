@@ -7,7 +7,9 @@ const { getMangaOfTheDay } = require("./googleSheets");
 dotenv.config();
 
 // Create a new client instance
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+});
 
 client.commands = new Collection();
 
