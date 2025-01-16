@@ -58,6 +58,7 @@ const sendMessage = async () => {
 
   const mangasOfTheDay = await getMangaOfTheDay(days[today]);
 
+  // maybe just add client.on('ready' here)
   const channel = client.channels.cache.get(channelID);
 
   if (channel) {
